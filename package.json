@@ -1,0 +1,16 @@
+{
+  "name": "actividad4_cypresssaucedemo",
+  "version": "1.0.0",
+  "description": "",
+  "main": "cypress.config.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "grupoKarenLizethEver",
+  "license": "ISC",
+  "devDependencies": {
+    "@cypress-audit/lighthouse": "^1.4.2",
+    "@cypress-audit/pa11y": "^1.4.2",
+    "cypress-audit": "^1.1.0"
+  }
+}
