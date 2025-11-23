@@ -63,4 +63,89 @@ describe("Flujos de Iniciar Sesion", () => {
     cy.co_CompararTextoProducto("@mamelucoPrecio", Selector.PRECIO_CARRITO_MAMELUCO);
 
   });
+
+
+  it("Completar el proceso de checkout exitosamente", function () {
+    cy.log("**INICIO: Proceso de Checkout**");
+
+    // 1. Iniciar sesión con datos válidos
+    cy.co_IniciarSesion(this.usuario.nombreUsuario, this.usuario.clave);
+    cy.url().should("include", "/inventory.html");
+
+    // 2. Agregar productos al carrito (reutilizando la lógica existente)
+    cy.get(Selector.BOTON_AGREGAR_MOCHILA).click();
+    cy.get(Selector.BOTON_AGREGAR_CHAQUETA).click();
+    cy.get(Selector.BOTON_AGREGAR_MAMELUCO).click();
+
+    // 3. Validar que los productos están agregados
+    cy.get(Selector.BOTON_REMOVER_MOCHILA).should("exist").and("be.visible");
+    cy.get(Selector.BOTON_REMOVER_CHAQUETA).should("exist").and("be.visible");
+    cy.get(Selector.BOTON_REMOVER_MAMELUCO).should("exist").and("be.visible");
+
+    // 4. Ir al carrito de compras
+    cy.get(Selector.ICONO_CARRITO).click();
+    cy.url().should("include", "/cart.html");
+    cy.get(Selector.TITULOPRODUCTOS).should("contain", "Your Cart");
+
+    // 5. Validar que hay 3 productos en el carrito
+    cy.get(".cart_item").should("have.length", 3);
+
+    // 6. Iniciar proceso de checkout
+    cy.get(Selector.BOTON_CHECKOUT)
+      .should("be.visible")
+      .and("contain", "Checkout")
+      .click();
+
+    // 7. Validar que estamos en la página de información
+    cy.url().should("include", "/checkout-step-one.html");
+    cy.get(Selector.TITULOPRODUCTOS).should(
+      "contain",
+      "Checkout: Your Information"
+    );
+
+    // 8. Cargar datos de checkout desde fixture
+    cy.fixture("fx_DatosCheckout").then((datosCheckout) => {
+      // 9. Llenar el formulario de checkout
+      cy.co_LlenarFormularioCheckout(
+        datosCheckout.nombre,
+        datosCheckout.apellido,
+        datosCheckout.codigoPostal
+      );
+    });
+
+    // 10. Validar que estamos en la página de resumen
+    cy.url().should("include", "/checkout-step-two.html");
+
+    // 11. Validar elementos del resumen de compra
+    cy.co_ValidarResumenCompra();
+
+    // 12. Validar que los 3 productos están en el resumen
+    cy.get(".cart_item").should("have.length", 3);
+
+    // 13. Validar nombres de productos visibles en resumen
+    cy.get('[data-test="inventory-item-name"]').should("have.length", 3);
+    cy.get('[data-test="inventory-item-name"]').each(($nombre) => {
+      cy.wrap($nombre).should("be.visible");
+    });
+
+    // 14. Validar precios visibles en resumen
+    cy.get('[data-test="inventory-item-price"]').should("have.length", 3);
+    cy.get('[data-test="inventory-item-price"]').each(($precio) => {
+      cy.wrap($precio).should("be.visible");
+      const precio = parseFloat($precio.text().replace("$", ""));
+      expect(precio).to.be.greaterThan(0);
+    });
+
+    // 15. Validar cálculo del total
+    cy.co_ValidarTotalCompra();
+
+    // 16. Finalizar la compra
+    cy.get(Selector.BOTON_FINISH).click();
+
+    // 17. Validar confirmación de compra exitosa
+    cy.co_ValidarConfirmacionCompra();
+
+    cy.log("**FIN: Proceso de Checkout Completado Exitosamente**");
+  });
+
 });
